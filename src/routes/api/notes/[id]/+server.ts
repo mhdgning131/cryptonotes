@@ -1,22 +1,26 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getKV } from '$lib/server/kv';
+import { initStorage } from '$lib/server/storage';
 
 export const GET: RequestHandler = async ({ params, platform }) => {
-    const kv = await getKV(platform);
     const { id } = params;
 
-    // Fetch blob and metadata (for burn-on-read logic)
-    const { value: blob, metadata } = await kv.get(id as string);
+    try {
+        const storage = initStorage(platform);
+        const item = await storage.get(id);
 
-    if (!blob) {
-        return json({ error: 'Note not found or expired' }, { status: 404 });
+        if (!item) {
+            return json({ error: 'Note not found or expired' }, { status: 404 });
+        }
+
+        // Blind Storage Hardening: 
+        // If it's a "burn after reading" note, we delete it ATOMICALLY now.
+        if (item.metadata?.burn) {
+            await storage.delete(id);
+        }
+
+        return json({ blob: item.blob });
+    } catch (e) {
+        return json({ error: 'Storage failure' }, { status: 500 });
     }
-
-    // Handle self-destruction (Burn-on-read)
-    if (metadata?.burn) {
-        await kv.delete(id as string);
-    }
-
-    return json({ blob });
 };

@@ -1,11 +1,34 @@
+import { gzipSync, gunzipSync, strFromU8 } from 'fflate';
+
 /**
  * Crypto utilities for CryptoNotes
- * Uses Web Crypto API for performance and security
+ * Security Specs:
+ * - Algorithm: AES-GCM 256-bit
+ * - Key Derivation: PBKDF2 with SHA-256
+ * - Iterations: 100,000
+ * - Compression: Gzip (fflate)
  */
 
 const ITERATIONS = 100000;
 const SALT_SIZE = 16;
 const IV_SIZE = 12;
+
+function toSafeBase64(u8: Uint8Array): string {
+    return btoa(String.fromCharCode(...u8))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+}
+
+function fromSafeBase64(base64: string): Uint8Array {
+    const b64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+        u8[i] = bin.charCodeAt(i);
+    }
+    return u8;
+}
 
 export async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
     const enc = new TextEncoder();
@@ -31,8 +54,14 @@ export async function deriveKey(password: string, salt: Uint8Array): Promise<Cry
     );
 }
 
-export async function encrypt(text: string, password: string): Promise<{ blob: string }> {
+export async function encrypt(text: string, password: string, compress = false): Promise<{ blob: string }> {
     const enc = new TextEncoder();
+    let data: Uint8Array = enc.encode(text);
+
+    if (compress) {
+        data = new Uint8Array(gzipSync(data));
+    }
+
     const salt = crypto.getRandomValues(new Uint8Array(SALT_SIZE));
     const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
     const key = await deriveKey(password, salt);
@@ -40,7 +69,7 @@ export async function encrypt(text: string, password: string): Promise<{ blob: s
     const encrypted = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv },
         key,
-        enc.encode(text)
+        data as any
     );
 
     const combined = new Uint8Array(SALT_SIZE + IV_SIZE + encrypted.byteLength);
@@ -49,14 +78,12 @@ export async function encrypt(text: string, password: string): Promise<{ blob: s
     combined.set(new Uint8Array(encrypted), SALT_SIZE + IV_SIZE);
 
     return {
-        blob: btoa(String.fromCharCode(...combined))
+        blob: toSafeBase64(combined)
     };
 }
 
-export async function decrypt(blob: string, password: string): Promise<string> {
-    const combined = new Uint8Array(
-        atob(blob).split('').map(c => c.charCodeAt(0))
-    );
+export async function decrypt(blob: string, password: string, decompress = false): Promise<string> {
+    const combined = fromSafeBase64(blob);
 
     const salt = combined.slice(0, SALT_SIZE);
     const iv = combined.slice(SALT_SIZE, SALT_SIZE + IV_SIZE);
@@ -70,6 +97,15 @@ export async function decrypt(blob: string, password: string): Promise<string> {
         data
     );
 
+    if (decompress) {
+        try {
+            return strFromU8(gunzipSync(new Uint8Array(decrypted)));
+        } catch (e) {
+            console.error("Decompression failed, falling back to raw decode");
+            return new TextDecoder().decode(decrypted);
+        }
+    }
+
     return new TextDecoder().decode(decrypted);
 }
 
@@ -79,8 +115,5 @@ export async function decrypt(blob: string, password: string): Promise<string> {
 export function generateBaseKey(): string {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
-    return btoa(String.fromCharCode(...array))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
+    return toSafeBase64(array);
 }

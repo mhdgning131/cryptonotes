@@ -1,41 +1,54 @@
 # CryptoNotes
 
-**Secure, E2E Encrypted Secret Sharing**
+**Secure, E2E Encrypted Secret Sharing | Platform Agnostic | Blind Storage**
 
-CryptoNotes is a minimalistic web application designed for sharing private and secure notes. All notes are encrypted client-side, ensuring that the server and storage have zero knowledge of the content.
+CryptoNotes is a pro-privacy platform for sharing encrypted secrets. Designed with a "Dumb Server" philosophy—the server never knows what you're sharing, who sent it, or how it's compressed.
 
-## Security Architecture
+## Architecture
 
-Our security model protects your privacy with mathematical certainty through a multi-layered approach as detailed below.
+Our architecture treats the server as a liability, prioritizing your privacy at every layer.
 
-### 01. E2E Encryption
-Encryption happens **entirely inside your browser**. Before any message is sent to our servers, it is processed through the **AES-GCM 256-bit** algorithm via the standard Web Crypto API.
+### 01. Storage Hub (Dual Modes)
+Users can choose their preferred balance of convenience and privacy:
+- **Cloud Storage (Blind)**: Blobs are stored in our backend (KV or SQLite). Enables **short links**, **TTL**, and **Burn-after-reading**.
+- **Zero-DB (Max Privacy)**: The standard for anonymity. The entire encrypted payload lives *only* in the URL hash. No record hits the server disk.
 
-*   **Local Processing**: Your raw text is never available in RAM outside of your own device's controlled environment.
-*   **Military Grade**: AES-GCM is the industry standard for secure, authenticated data encryption.
+### 02. Security Parameters
+We follow world-class privacy standards:
+- **Encryption**: AES-GCM 256-bit (Authenticated Encryption).
+- **Key Derivation**: PBKDF2 with **100,000 iterations** of SHA-256.
+- **Compression**: **Gzip (fflate)** compression applied before encryption to optimize Zero-DB link lengths.
+- **Invisible Keys**: Decryption keys stay in the URL hash fragment. Browsers **never** send this to the server.
 
-### 02. Zero Knowledge
-The decryption key is generated randomly on your device and appended to the URL as a **hash fragment** (everything after the `#`).
-
-> **Technical Fact**: Browsers never send the hash fragment to the server.
-
-Because we never receive the key, we have **Zero Knowledge** of your content. If a government or hacker compromised our database, they would only see a wall of encrypted "blobs" that are impossible to crack without your unique URL.
+### 03. Platform Agnostic
+Powered by `adapter-auto`, deployable anywhere:
+- **Cloud Native**: Optimized for **Cloudflare Pages + KV**.
+- **Self-Hostable**: Runs on any Node/Docker environment with **SQLite** persistence via `DB_PATH`.
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (Latest LTS recommended)
-- Cloudflare Account (for KV storage and Pages deployment) This is optional tho if you want to deploy it yourself anywhere else it should work fine (just edit the code cuz actually its made for cloudflare)
+- Node.js (Latest LTS)
+- SQLite (Bundled, no setup required)
 
-### Development
+### Local Development
 ```bash
 npm install
 npm run dev
 ```
 
-### Deployment
-This project is optimized for **Cloudflare Pages**.
+### Self-Hosting (Node/Docker)
+To persist notes locally:
+```bash
+# Node
+DB_PATH=./notes.db npm run build && node build
+
+# Docker
+docker run -e DB_PATH=/data/notes.db -v ./data:/data cryptonotes
+```
+
+### Deployment (Cloud)
+Works out-of-the-box on Cloudflare, Vercel, or Netlify.
 ```bash
 npm run build
-npx wrangler pages deploy .svelte-kit/cloudflare
 ```

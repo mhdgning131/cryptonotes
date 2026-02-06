@@ -4,6 +4,7 @@
 
     let content = $state("");
     let password = $state("");
+    let storageMode = $state<"cloud" | "local">("cloud");
     let ttl = $state(24 * 60 * 60 * 1000); // Default 24h
     let burn = $state(false);
 
@@ -26,18 +27,29 @@
         try {
             const baseKey = generateBaseKey();
             const encryptionPassword = baseKey + password;
-            const { blob } = await encrypt(content, encryptionPassword);
+            // Always compress for Zero-DB, optional for Cloud (preferring false for cloud to keep blobs simple unless needed)
+            const { blob } = await encrypt(
+                content,
+                encryptionPassword,
+                storageMode === "local",
+            );
 
-            const response = await fetch("/api/notes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ blob, ttl, burn }),
-            });
+            if (storageMode === "cloud") {
+                const response = await fetch("/api/notes", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ blob, ttl, burn }),
+                });
 
-            if (!response.ok) throw new Error("Failed to save note");
+                if (!response.ok)
+                    throw new Error("Failed to save note to cloud");
 
-            const { id } = await response.json();
-            noteUrl = `${window.location.origin}/n/${id}#${baseKey}`;
+                const { id } = await response.json();
+                noteUrl = `${window.location.origin}/n/${id}#${baseKey}`;
+            } else {
+                // Zero-DB: The entire encrypted blob is in the URL hash
+                noteUrl = `${window.location.origin}/n/#${baseKey}${blob}`;
+            }
         } catch (e) {
             error = "Error creating note. Please try again.";
             console.error(e);
@@ -127,56 +139,110 @@
                             Note Configuration
                         </h2>
 
-                        <div class="flex flex-col gap-2">
-                            <label for="note-password" class="label-sub"
-                                >Access Password</label
-                            >
-                            <input
-                                id="note-password"
-                                type="password"
-                                bind:value={password}
-                                placeholder="Optional extra layer"
-                                disabled={loading}
-                                class="refined-input"
-                            />
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label for="note-ttl" class="label-sub"
-                                >Expiration</label
-                            >
-                            <select
-                                id="note-ttl"
-                                bind:value={ttl}
-                                disabled={loading}
-                                class="refined-input"
-                            >
-                                {#each ttlOptions as option}
-                                    <option value={option.value}
-                                        >{option.label}</option
+                        <div class="flex flex-col gap-6">
+                            <div class="flex flex-col gap-2">
+                                <span class="label-sub flex items-center">
+                                    Storage Mode
+                                    <div class="tooltip-container">
+                                        <span class="info-icon">i</span>
+                                        <div class="tooltip">
+                                            Choose how your encrypted note is
+                                            stored. Either on Cloudflare server
+                                            or entirely in the URL (zero server
+                                            record).
+                                        </div>
+                                    </div>
+                                </span>
+                                <div class="mode-toggle">
+                                    <button
+                                        type="button"
+                                        class:active={storageMode === "cloud"}
+                                        onclick={() => (storageMode = "cloud")}
+                                        disabled={loading}
                                     >
-                                {/each}
-                            </select>
-                        </div>
+                                        Cloud Storage
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class:active={storageMode === "local"}
+                                        onclick={() => (storageMode = "local")}
+                                        disabled={loading}
+                                        class="pro-badge-btn"
+                                    >
+                                        Zero-DB
+                                        <span class="badge">Max Privacy</span>
+                                    </button>
+                                </div>
+                                <p
+                                    class="text-[5px] uppercase font-bold opacity-50 tracking-tighter"
+                                >
+                                    {#if storageMode === "cloud"}
+                                        Encrypted blob is stored on our server
+                                        to detect reads and manage autodeletion.
+                                    {:else}
+                                        Entirely serverless. The data lives ONLY
+                                        in the URL hash. We cannot detect reads
+                                        or manage autodeletion.
+                                    {/if}
+                                </p>
+                            </div>
 
-                        <div class="flex items-center pt-2">
-                            <div
-                                class="checkbox-container"
-                                style="margin-right: 1.5rem;"
-                            >
+                            <div class="flex flex-col gap-2">
+                                <label for="note-password" class="label-sub"
+                                    >Access Password</label
+                                >
                                 <input
-                                    id="note-burn"
-                                    type="checkbox"
-                                    bind:checked={burn}
+                                    id="note-password"
+                                    type="password"
+                                    bind:value={password}
+                                    placeholder="Password"
                                     disabled={loading}
-                                    class="checkbox-custom"
+                                    class="refined-input"
                                 />
                             </div>
-                            <label
-                                for="note-burn"
-                                class="label-sub cursor-pointer mb-0"
-                                >Burn after reading</label
-                            >
+
+                            {#if storageMode === "cloud"}
+                                <div class="flex flex-col gap-3 pt-2">
+                                    <div class="flex flex-col gap-2">
+                                        <label for="note-ttl" class="label-sub"
+                                            >Expiration</label
+                                        >
+                                        <select
+                                            id="note-ttl"
+                                            bind:value={ttl}
+                                            disabled={loading}
+                                            class="refined-input"
+                                        >
+                                            {#each ttlOptions as option}
+                                                <option value={option.value}
+                                                    >{option.label}</option
+                                                >
+                                            {/each}
+                                        </select>
+                                    </div>
+
+                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <div
+                                        class="flex items-center gap-3 py-2 cursor-pointer"
+                                        onclick={() => (burn = !burn)}
+                                    >
+                                        <input
+                                            id="note-burn"
+                                            type="checkbox"
+                                            bind:checked={burn}
+                                            disabled={loading}
+                                            class="checkbox-custom"
+                                        />
+                                        <label
+                                            for="note-burn"
+                                            class="label-sub cursor-pointer mb-0"
+                                            style="margin-top: 0;"
+                                            >Burn after reading</label
+                                        >
+                                    </div>
+                                </div>
+                            {/if}
                         </div>
                     </div>
 
@@ -368,13 +434,6 @@
     .info-banner {
         padding: 1.5rem;
         opacity: 0.6;
-    }
-
-    .checkbox-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 0.5rem;
     }
 
     .checkbox-custom {

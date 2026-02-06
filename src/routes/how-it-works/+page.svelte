@@ -70,30 +70,24 @@
 
             <div class="card flex flex-col gap-6 bg-bg-subtle">
                 <p class="leading-relaxed">
-                    Encryption happens <strong
-                        >entirely inside your browser</strong
-                    >. Before any message is sent to our servers, it is
-                    processed through the <strong>AES-GCM 256-bit</strong> algorithm
-                    via the standard Web Crypto API.
+                    Encryption happens <strong>entirely inside your browser</strong>. Before any message is sent to our servers, it is processed through the <strong>AES-GCM 256-bit</strong> algorithm via the standard Web Crypto API.
                 </p>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="flex flex-col gap-2">
                         <h4 class="text-[10px] uppercase font-black opacity-50">
-                            Local Processing
+                            Key Derivation
                         </h4>
                         <p class="text-sm">
-                            Your raw text is never available in RAM outside of
-                            your own device's controlled environment.
+                            We use <strong>PBKDF2</strong> with <strong>100,000 iterations</strong> of SHA-256 to derive the encryption key from your random base key and password.
                         </p>
                     </div>
                     <div class="flex flex-col gap-2">
                         <h4 class="text-[10px] uppercase font-black opacity-50">
-                            Military Grade
+                            Gzip Compression
                         </h4>
                         <p class="text-sm">
-                            AES-GCM is the industry standard for secure,
-                            authenticated data encryption.
+                            Data is compressed using <strong>Gzip (fflate)</strong> before encryption to optimize URL length for Zero-DB notes.
                         </p>
                     </div>
                 </div>
@@ -136,15 +130,113 @@
             </div>
         </section>
 
-        <!-- Open Source Section -->
-        <section id="open-source" class="flex flex-col scroll-mt-24">
+        <!-- Storage Modes Section -->
+        <section id="storage-modes" class="flex flex-col scroll-mt-24">
             <div class="section-header">
                 <span
                     class="text-bg font-black text-[10px] border border-bg/30 px-1"
                     >03</span
                 >
                 <h2 class="m-0 text-[12px] tracking-tight uppercase font-black">
-                    Open Source Transparency
+                    Storage Ecosystem
+                </h2>
+            </div>
+
+            <div class="card flex flex-col gap-6 bg-bg-subtle">
+                <p class="leading-relaxed">
+                    We offer two distinct ways to handle your encrypted data,
+                    allowing you to choose the perfect balance of convenience
+                    and absolute privacy.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div
+                        class="flex flex-col gap-2 p-4 border border-border/20"
+                    >
+                        <h4 class="text-[10px] uppercase font-black opacity-50">
+                            Cloud Storage
+                        </h4>
+                        <p class="text-sm">
+                            Blobs are stored in our <strong
+                                >Blind Storage</strong
+                            > hub. This enables short links and managed features
+                            like "Burn after reading".
+                        </p>
+                    </div>
+                    <div
+                        class="flex flex-col gap-2 p-4 border border-fg bg-fg text-bg"
+                    >
+                        <h4
+                            class="text-[10px] uppercase font-black opacity-100"
+                        >
+                            Zero-DB (Max Privacy)
+                        </h4>
+                        <p class="text-sm opacity-90">
+                            The encrypted payload lives <strong>ONLY</strong> in
+                            the URL hash. Your browser never sends it to any server.
+                            Complete digital anonymity.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blind Storage Section -->
+        <section id="blind-storage" class="flex flex-col scroll-mt-24">
+            <div class="section-header">
+                <span
+                    class="text-bg font-black text-[10px] border border-bg/30 px-1"
+                    >04</span
+                >
+                <h2 class="m-0 text-[12px] tracking-tight uppercase font-black">
+                    Blind Storage Hardening
+                </h2>
+            </div>
+
+            <div class="card flex flex-col gap-6">
+                <p class="leading-relaxed">
+                    When data is stored on our servers, we treat it as a
+                    liability. Our backend is "blind" by design.
+                </p>
+
+                <ul class="flex flex-col gap-4 list-none p-0">
+                    <li class="flex gap-4">
+                        <div class="flex flex-col gap-1">
+                            <span class="font-bold text-sm"
+                                >Zero Metadata Tracking</span
+                            >
+                            <span class="text-xs opacity-70"
+                                >We do not store IP addresses, creation
+                                timestamps, or user agents. The server only
+                                knows when to delete the record.</span
+                            >
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="flex flex-col gap-1">
+                            <span class="font-bold text-sm"
+                                >Atomic Burn-and-Delete</span
+                            >
+                            <span class="text-xs opacity-70"
+                                >For one-time notes, the record is purged from
+                                the database the <strong>instant</strong> it is requested,
+                                ensuring no trail remains.</span
+                            >
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Transparency Section -->
+        <section id="open-source" class="flex flex-col scroll-mt-24">
+            <div class="section-header">
+                <span
+                    class="text-bg font-black text-[10px] border border-bg/30 px-1"
+                    >05</span
+                >
+                <h2 class="m-0 text-[12px] tracking-tight uppercase font-black">
+                    Sovereignty & Trust
                 </h2>
             </div>
 
@@ -171,11 +263,12 @@
                         <span class="text-fg-subtle">●</span>
                         <div class="flex flex-col gap-1">
                             <span class="font-bold text-sm"
-                                >Independent Hosting</span
+                                >Pro-Persistance (Self-Hosting)</span
                             >
                             <span class="text-xs opacity-70"
-                                >The system is designed to be easily deployable
-                                on your own infrastructure.</span
+                                >The system is designed with a portable SQLite
+                                backend, allowing you to run your own instance
+                                with 100% control over the hardware.</span
                             >
                         </div>
                     </li>

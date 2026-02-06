@@ -1,27 +1,32 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { v4 as uuidv4 } from 'uuid';
-import { getKV } from '$lib/server/kv';
+import { initStorage } from '$lib/server/storage';
 
 export const POST: RequestHandler = async ({ request, platform }) => {
-    const kv = await getKV(platform);
-    const { blob, ttl, burn = false } = await request.json();
+    try {
+        const { blob, ttl, burn } = await request.json();
 
-    if (!blob) return json({ error: 'Blob required' }, { status: 400 });
+        // Input validation
+        if (!blob) return json({ error: 'Missing content' }, { status: 400 });
 
-    const id = uuidv4();
+        const storage = initStorage(platform);
+        const id = crypto.randomUUID();
 
-    // Cloudflare KV expirationTtl must be at least 60 seconds
-    const ttlSeconds = Math.max(60, Math.floor((ttl || 24 * 60 * 60 * 1000) / 1000));
+        // 100% Blind Storage: No IP, No timestamps, No logs.
+        await storage.put(id, blob, {
+            expirationTtl: ttl ? Math.floor(ttl / 1000) : 24 * 60 * 60,
+            metadata: { burn: !!burn }
+        });
 
-    await kv.put(id, blob, {
-        expirationTtl: ttlSeconds,
-        metadata: { burn }
-    });
-
-    return json({ id });
+        return json({ id });
+    } catch (e) {
+        // Blind error: No leakage of what failed
+        return json({ error: 'Storage failure' }, { status: 500 });
+    }
 };
 
-export const GET: RequestHandler = async () => {
-    return json({ error: 'Use /api/notes/[id] instead' }, { status: 400 });
+export const GET: RequestHandler = async ({ params, platform }) => {
+    // This file will handle /api/notes (POST)
+    // For /api/notes/[id] (GET), we need another file or use a dynamic route
+    return json({ error: 'Method not allowed' }, { status: 405 });
 };

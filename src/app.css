@@ -279,6 +279,156 @@ button:disabled {
   animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Tooltips */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50% !important;
+  border: 1px solid var(--fg-subtle);
+  color: var(--fg-subtle);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  font-weight: 900;
+  transition: all var(--transition);
+  margin-left: 0.5rem;
+}
+
+.info-icon:hover {
+  border-color: var(--fg);
+  color: var(--fg);
+  background: var(--bg-subtle);
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  width: 220px;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--fg);
+}
+
+.tooltip-container:hover .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Toggle Switch */
+.mode-toggle {
+  display: flex;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.mode-toggle button {
+  flex: 1;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.6rem !important;
+  font-size: 0.65rem !important;
+  background: transparent !important;
+  color: var(--fg-subtle) !important;
+  transform: none !important;
+}
+
+.mode-toggle button.active {
+  background: var(--fg) !important;
+  color: var(--bg) !important;
+}
+
+.mode-toggle button.pro-badge-btn {
+  position: relative;
+}
+
+.mode-toggle button .badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 6px;
+  padding: 2px 5px;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  z-index: 10;
+  line-height: 1;
+}
+
+.mode-toggle button.active .badge {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--bg);
+}
+
+.mode-toggle button:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--fg) !important;
+}
+
+/* Checkbox Custom */
+.checkbox-custom {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition);
+}
+
+.checkbox-custom:checked {
+  background: var(--fg);
+}
+
+.checkbox-custom:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
