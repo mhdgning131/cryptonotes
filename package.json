@@ -1,0 +1,30 @@
+{
+	"name": "cryptonotes",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^7.0.0",
+		"@sveltejs/adapter-cloudflare": "^7.2.6",
+		"@sveltejs/kit": "^2.50.1",
+		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"svelte": "^5.48.2",
+		"svelte-check": "^4.3.5",
+		"typescript": "^5.9.3",
+		"vite": "^7.3.1"
+	},
+	"dependencies": {
+		"@types/qrcode": "^1.5.6",
+		"@types/uuid": "^10.0.0",
+		"qrcode": "^1.5.4",
+		"uuid": "^13.0.0"
+	}
+}

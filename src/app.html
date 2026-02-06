@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title>CryptoNotes | Secure, E2E Encrypted Secret Sharing</title>
+	<meta name="description" content="Share secure information with military-grade AES-GCM 256-bit encryption." />
+	<meta name="keywords"
+		content="encrypted notes, secure secret sharing, zero knowledge, e2e encryption, private message, open source encryption, secure text sharing" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<!-- Favicons -->
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link rel="alternate icon" type="image/x-icon" href="/favicon.svg" />
+	<link rel="apple-touch-icon" href="/logo.svg" />
+	<link rel="manifest" href="/site.webmanifest" />
+	<meta name="theme-color" content="#000000" />
+
+	<!-- Open Graph / Facebook -->
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://cryptonotes.pages.dev/" />
+	<meta property="og:title" content="CryptoNotes | Secure, E2E Encrypted Secret Sharing" />
+	<meta property="og:description"
+		content="Share secure information with military-grade AES-GCM 256-bit encryption." />
+	<meta property="og:image" content="https://cryptonotes.pages.dev/og-image.png" />
+
+	<!-- Twitter -->
+	<meta property="twitter:card" content="summary_large_image" />
+	<meta property="twitter:url" content="https://cryptonotes.pages.dev/" />
+	<meta property="twitter:title" content="CryptoNotes | Secure, E2E Encrypted Secret Sharing" />
+	<meta property="twitter:description"
+		content="Share secure information with military-grade AES-GCM 256-bit encryption." />
+	<meta property="twitter:image" content="https://cryptonotes.pages.dev/og-image.png" />
+
+	%sveltekit.head%
+	<script>
+		(function () {
+			try {
+				const theme = localStorage.getItem('theme') ||
+					(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+				document.documentElement.setAttribute('data-theme', theme);
+			} catch (e) { }
+		})();
+	</script>
+</head>
+
+<body data-sveltekit-preload-data="hover">
+	<div style="display: contents">%sveltekit.body%</div>
+</body>
+
+</html>
