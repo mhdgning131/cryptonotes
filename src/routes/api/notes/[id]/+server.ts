@@ -6,7 +6,7 @@ export const GET: RequestHandler = async ({ params, platform }) => {
     const { id } = params;
 
     try {
-        const storage = initStorage(platform);
+        const storage = await initStorage(platform);
         const item = await storage.get(id);
 
         if (!item) {

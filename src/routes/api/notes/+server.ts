@@ -9,7 +9,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
         // Input validation
         if (!blob) return json({ error: 'Missing content' }, { status: 400 });
 
-        const storage = initStorage(platform);
+        const storage = await initStorage(platform);
         const id = crypto.randomUUID();
 
         // 100% Blind Storage: No IP, No timestamps, No logs.

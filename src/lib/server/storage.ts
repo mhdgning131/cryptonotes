@@ -62,9 +62,9 @@ class KVProvider implements IStorageProvider {
 // SQLite Provider (The Pro Move)
 let sqliteDb: any = null;
 class SQLiteProvider implements IStorageProvider {
-    constructor(dbPath: string) {
+    private db: any;
+    constructor(Database: any, dbPath: string) {
         if (!sqliteDb) {
-            const Database = require('better-sqlite3');
             sqliteDb = new Database(dbPath);
             sqliteDb.exec(`
                 CREATE TABLE IF NOT EXISTS notes (
@@ -77,6 +77,7 @@ class SQLiteProvider implements IStorageProvider {
             // Index for faster cleanup
             sqliteDb.exec(`CREATE INDEX IF NOT EXISTS idx_expires ON notes(expires_at)`);
         }
+        this.db = sqliteDb;
     }
 
     private cleanup() {
@@ -113,21 +114,29 @@ class SQLiteProvider implements IStorageProvider {
 /**
  * Storage Hub - Auto-discovers the best provider
  */
-export function initStorage(platform?: any): IStorageProvider {
+export async function initStorage(platform?: any): Promise<IStorageProvider> {
     // 1. Check Cloudflare KV
     if (platform?.env?.NOTES_KV) {
         return new KVProvider(platform.env.NOTES_KV);
     }
 
-    // 2. Check for SQLite persistence (Node.js environments)
-    // We use a relative path or an absolute path from an ENV var
-    const dbPath = process.env.DB_PATH || 'notes.db';
+    // 2. Check for SQLite persistence (Node.js/Self-hosting environments)
+    // We only try this if we are NOT in a Cloudflare Worker-like environment
+    // and if we have access to node's 'process'
+    const isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
 
-    // Only attempt SQLite if we're in a Node.js environment where 'better-sqlite3' can load
-    try {
-        return new SQLiteProvider(dbPath);
-    } catch (e) {
-        console.warn("⚠️ SQLite provider failed to initialize, falling back to memory store.", e);
-        return new MemoryProvider();
+    if (isNode) {
+        const dbPath = (process as any).env.DB_PATH || 'notes.db';
+        try {
+            // We use a dynamic import with a variable to fool static analyzers (esbuild/wrangler)
+            // so they don't try to bundle native node modules into Cloudflare Workers
+            const sqliteModule = 'better-sqlite3';
+            const { default: Database } = await import(/* @vite-ignore */ sqliteModule);
+            return new SQLiteProvider(Database, dbPath);
+        } catch (e) {
+            console.warn("⚠️ SQLite provider failed to initialize, falling back to memory store.", e);
+        }
     }
+
+    return new MemoryProvider();
 }
