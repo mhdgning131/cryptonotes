@@ -2,16 +2,16 @@
 
 **Secure, E2E Encrypted Secret Sharing | Platform Agnostic | Blind Storage**
 
-CryptoNotes is a pro-privacy platform for sharing encrypted secrets. Designed with a "Dumb Server" philosophy—the server never knows what you're sharing, who sent it, or how it's compressed.
+CryptoNotes is a pro-privacy platform for sharing encrypted secrets. The server never knows what you're sharing, who sent it, or how it's compressed.
 
 ## Security
 
 | Feature | Specification |
 |---------|---------------|
 | **Encryption** | AES-GCM 256-bit (Authenticated Encryption) |
-| **Key Derivation** | Argon2id (m=64MB, t=3, p=1) — memory-hard, OWASP recommended |
+| **Key Derivation** | Argon2id (m=64MB, t=3, p=1) memory-hard |
 | **Compression** | Gzip (fflate) for shorter Zero-DB URLs |
-| **Invisible Keys** | Decryption keys stay in URL hash — never sent to server |
+| **Invisible Keys** | Decryption keys stay in URL hash and never sent to server |
 
 ### Privacy Guarantees
 - **Zero Logging**: No IP addresses, no timestamps, no request logs
