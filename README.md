@@ -5,12 +5,11 @@
 CryptoNotes is a pro-privacy platform for sharing encrypted secrets. Designed with a "Dumb Server" philosophy—the server never knows what you're sharing, who sent it, or how it's compressed.
 
 ## Architecture
-
-Our architecture treats the server as a liability, prioritizing your privacy at every layer.
+The architecture treats the server as a liability, prioritizing your privacy at every layer.
 
 ### 01. Storage Hub (Dual Modes)
 Users can choose their preferred balance of convenience and privacy:
-- **Cloud Storage (Blind)**: Blobs are stored in our backend (KV or SQLite). Enables **short links**, **TTL**, and **Burn-after-reading**.
+- **Cloud Storage (Blind)**: Blobs are stored in backend (KV or SQLite). Enables **short links**, **TTL**, and **Burn-after-reading**.
 - **Zero-DB (Max Privacy)**: The standard for anonymity. The entire encrypted payload lives *only* in the URL hash. No record hits the server disk.
 
 ### 02. Security Parameters

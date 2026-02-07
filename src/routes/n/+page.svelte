@@ -18,18 +18,35 @@
             content = await decrypt(blob, fullPassword, true);
             loading = false;
             passwordRequired = false;
-        } catch (e) {
-            passwordRequired = true;
+        } catch (e: any) {
             loading = false;
-            if (password) error = "Incorrect password. Please try again.";
+            if (e.message === "WRONG_PASSWORD") {
+                passwordRequired = true;
+                if (password) {
+                    error = "Incorrect password. Please try again.";
+                } else {
+                    // Initial attempt with no password failed
+                    error =
+                        "This note is password-protected or the link may be incomplete.";
+                }
+            } else {
+                // If it's a structural corruption, we want to show the full-page error
+                passwordRequired = false;
+                error = "This link appears to be corrupt or incomplete.";
+            }
         }
     }
 
     onMount(() => {
         try {
             const hash = window.location.hash.substring(1);
-            if (!hash || hash.length < 44) {
-                throw new Error("Invalid or corrupt link: missing data.");
+
+            // Standard validation: BaseKey(43) + Salt(22 in b64) + IV(16 in b64)
+            // Minimum structural length for a valid Zero-DB link is around 81 characters
+            if (!hash || hash.length < 80) {
+                throw new Error(
+                    "Invalid or corrupt link: data is missing or truncated.",
+                );
             }
 
             // Zero-DB format: #<43-char-key><blob>

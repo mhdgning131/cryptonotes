@@ -70,7 +70,11 @@
 
             <div class="card flex flex-col gap-6 bg-bg-subtle">
                 <p class="leading-relaxed">
-                    Encryption happens <strong>entirely inside your browser</strong>. Before any message is sent to our servers, it is processed through the <strong>AES-GCM 256-bit</strong> algorithm via the standard Web Crypto API.
+                    Encryption happens <strong
+                        >entirely inside your browser</strong
+                    >. Before any message is sent to the server, it is processed
+                    through the <strong>AES-GCM 256-bit</strong> algorithm via the
+                    standard Web Crypto API.
                 </p>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -79,7 +83,9 @@
                             Key Derivation
                         </h4>
                         <p class="text-sm">
-                            We use <strong>PBKDF2</strong> with <strong>100,000 iterations</strong> of SHA-256 to derive the encryption key from your random base key and password.
+                            We use <strong>PBKDF2</strong> with
+                            <strong>100,000 iterations</strong> of SHA-256 to derive
+                            the encryption key from your random base key and password.
                         </p>
                     </div>
                     <div class="flex flex-col gap-2">
@@ -87,7 +93,10 @@
                             Gzip Compression
                         </h4>
                         <p class="text-sm">
-                            Data is compressed using <strong>Gzip (fflate)</strong> before encryption to optimize URL length for Zero-DB notes.
+                            Data is compressed using <strong
+                                >Gzip (fflate)</strong
+                            > before encryption to optimize URL length for Zero-DB
+                            notes.
                         </p>
                     </div>
                 </div>
@@ -123,7 +132,7 @@
                 <p class="text-sm opacity-80 leading-relaxed">
                     Because we never receive the key, we have <strong
                         >Zero Knowledge</strong
-                    > of your content. If a government or hacker compromised our
+                    > of your content. If a government or hacker compromised the
                     database, they would only see a wall of encrypted "blobs" that
                     are impossible to crack without your unique URL.
                 </p>
@@ -157,7 +166,7 @@
                             Cloud Storage
                         </h4>
                         <p class="text-sm">
-                            Blobs are stored in our <strong
+                            Blobs are stored in the <strong
                                 >Blind Storage</strong
                             > hub. This enables short links and managed features
                             like "Burn after reading".
@@ -195,8 +204,8 @@
 
             <div class="card flex flex-col gap-6">
                 <p class="leading-relaxed">
-                    When data is stored on our servers, we treat it as a
-                    liability. Our backend is "blind" by design.
+                    When data is stored on the server, we treat it as a
+                    liability. The backend is "blind" by design.
                 </p>
 
                 <ul class="flex flex-col gap-4 list-none p-0">

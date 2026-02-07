@@ -36,17 +36,29 @@
             content = await decrypt(blob, fullPassword);
             loading = false;
             passwordRequired = false;
-        } catch (e) {
-            passwordRequired = true;
+        } catch (e: any) {
             loading = false;
-            if (password) error = "Incorrect password. Please try again.";
+            if (e.message === "WRONG_PASSWORD") {
+                passwordRequired = true;
+                // If it's the first attempt (no password entered yet), show a more nuanced message
+                if (password) {
+                    error = "Incorrect password. Please try again.";
+                } else {
+                    error =
+                        "This note is password-protected or the link may be incomplete.";
+                }
+            } else {
+                passwordRequired = false;
+                error = "This note or key appears to be corrupt.";
+            }
         }
     }
 
     onMount(() => {
+        // Validation: The hash should contain at least the 43-char baseKey
         baseKey = window.location.hash.substring(1);
-        if (!baseKey) {
-            error = "Invalid link: missing decryption key.";
+        if (!baseKey || baseKey.length < 43) {
+            error = "Invalid or incomplete link: missing decryption key.";
             loading = false;
             return;
         }
@@ -134,10 +146,28 @@
                 <div class="header-group">
                     <h2 class="m-0 text-3xl font-black">Message.</h2>
                 </div>
+                <button
+                    onclick={() => {
+                        navigator.clipboard.writeText(content);
+                        const btn = document.getElementById("copy-btn");
+                        if (btn) {
+                            btn.textContent = "Copied!";
+                            setTimeout(
+                                () => (btn.textContent = "Copy Note"),
+                                1500,
+                            );
+                        }
+                    }}
+                    id="copy-btn"
+                    class="secondary-btn py-2 px-4 text-[10px]"
+                >
+                    Copy Note
+                </button>
             </div>
 
             <div
                 class="card bg-bg-subtle/30 mono whitespace-pre-wrap min-h-[400px] border-dashed text-lg leading-relaxed"
+                style="word-break: break-all; overflow-wrap: anywhere;"
             >
                 {content}
             </div>

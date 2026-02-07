@@ -2,6 +2,7 @@
     import { encrypt, generateBaseKey } from "$lib/crypto";
     import QRCode from "$lib/components/QRCode.svelte";
 
+    let { data } = $props();
     let content = $state("");
     let password = $state("");
     let storageMode = $state<"cloud" | "local">("cloud");
@@ -12,6 +13,31 @@
     let noteUrl = $state("");
     let error = $state("");
 
+    // Storage Limits (chars)
+    const LIMITS = {
+        zeroDB: 50000, // 50k for URL safety
+        cloudCloudflare: 10000000, // ~10MB
+        cloudSelfHosted: 100000000, // ~100MB
+    };
+
+    const maxChars = $derived(
+        storageMode === "local"
+            ? LIMITS.zeroDB
+            : data.isCloudflare
+              ? LIMITS.cloudCloudflare
+              : LIMITS.cloudSelfHosted,
+    );
+
+    const isOverLimit = $derived(content.length > maxChars);
+
+    const limitExplanation = $derived(
+        storageMode === "local"
+            ? "Limited to 50k characters to ensure the encrypted URL remains short enough for messaging apps and browsers to handle without truncation."
+            : data.isCloudflare
+              ? "Limited to 10MB to maintain optimal performance and stay within the platform's storage quotas."
+              : "Limited to 100MB for self-hosted instances to prevent resource abuse while allowing significantly larger secrets.",
+    );
+
     const ttlOptions = [
         { label: "1 Hour", value: 60 * 60 * 1000 },
         { label: "24 Hours", value: 24 * 60 * 60 * 1000 },
@@ -20,7 +46,7 @@
     ];
 
     async function createNote() {
-        if (!content) return;
+        if (!content || isOverLimit) return;
         loading = true;
         error = "";
 
@@ -122,7 +148,7 @@
 
             <div class="two-column-layout">
                 <!-- Left Column: Content (Widest) -->
-                <div class="left-col">
+                <div class="left-col" style="position: relative;">
                     <textarea
                         id="note-content"
                         bind:value={content}
@@ -130,6 +156,28 @@
                         disabled={loading}
                         class="main-textarea"
                     ></textarea>
+                    <div
+                        style="position: absolute; bottom: 12px; right: 16px; display: flex; align-items: center; gap: 4px; font-size: 10px; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; z-index: 10; padding: 4px 8px; background: {isOverLimit
+                            ? '#ef4444'
+                            : 'var(--bg)'}; color: {isOverLimit
+                            ? 'white'
+                            : 'inherit'}; opacity: 0.95;"
+                    >
+                        <span>
+                            {content.length.toLocaleString()} / {maxChars.toLocaleString()}
+                        </span>
+                        <div class="tooltip-container">
+                            <span
+                                class="info-icon"
+                                style={isOverLimit
+                                    ? "border-color: white; color: white;"
+                                    : ""}>i</span
+                            >
+                            <div class="tooltip w-64">
+                                {limitExplanation}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Right Column: Options -->
@@ -160,7 +208,9 @@
                                         onclick={() => (storageMode = "cloud")}
                                         disabled={loading}
                                     >
-                                        Cloud Storage
+                                        {data.isCloudflare
+                                            ? "Cloud Storage"
+                                            : "Self Storage"}
                                     </button>
                                     <button
                                         type="button"
@@ -177,7 +227,7 @@
                                     class="text-[5px] uppercase font-bold opacity-50 tracking-tighter"
                                 >
                                     {#if storageMode === "cloud"}
-                                        Encrypted blob is stored on our server
+                                        Encrypted blob is stored on the server
                                         to detect reads and manage autodeletion.
                                     {:else}
                                         Entirely serverless. The data lives ONLY
@@ -337,7 +387,6 @@
         flex: 0 0 800px;
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
     }
 
     .right-col {
@@ -352,6 +401,7 @@
         background: var(--bg-subtle);
         padding: 2rem;
         border: 1px solid var(--border);
+        flex: 1;
     }
 
     @media (max-width: 1100px) {
@@ -374,11 +424,12 @@
     }
 
     .main-textarea {
-        min-height: 500px;
         font-size: 1.25rem;
         padding: 2rem;
         line-height: 1.6;
         flex: 1;
+        min-height: 500px;
+        resize: vertical;
     }
 
     .refined-input {
