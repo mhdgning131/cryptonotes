@@ -17,7 +17,8 @@ Users can choose their preferred balance of convenience and privacy:
 We follow world-class privacy standards:
 - **Encryption**: AES-GCM 256-bit (Authenticated Encryption).
 - **Key Derivation**: PBKDF2 with **100,000 iterations** of SHA-256.
-- **Compression**: **Gzip (fflate)** compression applied before encryption to optimize Zero-DB link lengths.
+- **Gzip Compression**: Zero-DB notes are compressed with **Gzip (fflate)** to keep links as short as possible.
+- **Local Compatibility**: Configured for Cloudflare via `adapter-cloudflare` for manual manual deployments, but easily switchable to any other Svelte adapter.
 - **Invisible Keys**: Decryption keys stay in the URL hash fragment. Browsers **never** send this to the server.
 
 ### 03. Platform Agnostic
@@ -47,8 +48,9 @@ DB_PATH=./notes.db npm run build && node build
 docker run -e DB_PATH=/data/notes.db -v ./data:/data cryptonotes
 ```
 
-### Deployment (Cloud)
-Works out-of-the-box on Cloudflare, Vercel, or Netlify.
+### Deployment
+This project is configured with **adapter-cloudflare** for easy manual deployment.
 ```bash
 npm run build
+npx wrangler pages deploy .svelte-kit/cloudflare
 ```
