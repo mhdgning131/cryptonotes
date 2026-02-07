@@ -1,17 +1,27 @@
 import { gzipSync, gunzipSync, strFromU8 } from 'fflate';
+import { argon2id } from 'hash-wasm';
 
 /**
  * Crypto utilities for CryptoNotes
  * Security Specs:
  * - Algorithm: AES-GCM 256-bit
- * - Key Derivation: PBKDF2 with SHA-256
- * - Iterations: 100,000
+ * - Key Derivation: Argon2id (v2) or PBKDF2 (legacy)
+ * - Argon2id Params: m=65536, t=3, p=1 (OWASP recommended)
+ * - PBKDF2 Params: 100,000 iterations, SHA-256 (legacy fallback)
  * - Compression: Gzip (fflate)
  */
 
-const ITERATIONS = 100000;
+const PBKDF2_ITERATIONS = 100000;
 const SALT_SIZE = 16;
 const IV_SIZE = 12;
+
+// Argon2id parameters (OWASP recommended for browser)
+const ARGON2_MEMORY = 65536; // 64 MB
+const ARGON2_ITERATIONS = 3;
+const ARGON2_PARALLELISM = 1;
+
+// Version prefix for new Argon2id payloads
+const VERSION_PREFIX = 'v2$';
 
 function toSafeBase64(u8: Uint8Array): string {
     return btoa(String.fromCharCode(...u8))
@@ -56,7 +66,33 @@ function fromSafeBase64(base64: string): Uint8Array {
     }
 }
 
-export async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+/**
+ * Derive key using Argon2id (recommended for new encryptions)
+ */
+export async function deriveKeyArgon2(password: string, salt: Uint8Array): Promise<CryptoKey> {
+    const keyBytes = await argon2id({
+        password: password,
+        salt: salt,
+        parallelism: ARGON2_PARALLELISM,
+        iterations: ARGON2_ITERATIONS,
+        memorySize: ARGON2_MEMORY,
+        hashLength: 32,
+        outputType: 'binary'
+    });
+
+    return crypto.subtle.importKey(
+        'raw',
+        new Uint8Array(keyBytes),
+        { name: 'AES-GCM' },
+        false,
+        ['encrypt', 'decrypt']
+    );
+}
+
+/**
+ * Derive key using PBKDF2 (legacy fallback for old links)
+ */
+export async function deriveKeyPBKDF2(password: string, salt: Uint8Array): Promise<CryptoKey> {
     const enc = new TextEncoder();
     const baseKey = await crypto.subtle.importKey(
         'raw',
@@ -70,7 +106,7 @@ export async function deriveKey(password: string, salt: Uint8Array): Promise<Cry
         {
             name: 'PBKDF2',
             salt: salt as any,
-            iterations: ITERATIONS,
+            iterations: PBKDF2_ITERATIONS,
             hash: 'SHA-256'
         },
         baseKey,
@@ -80,6 +116,10 @@ export async function deriveKey(password: string, salt: Uint8Array): Promise<Cry
     );
 }
 
+/**
+ * Encrypt text using AES-GCM with Argon2id key derivation
+ * Output format: v2$<base64(salt|iv|ciphertext)>
+ */
 export async function encrypt(text: string, password: string, compress = false): Promise<{ blob: string }> {
     const enc = new TextEncoder();
     let data: Uint8Array = enc.encode(text);
@@ -90,7 +130,7 @@ export async function encrypt(text: string, password: string, compress = false):
 
     const salt = crypto.getRandomValues(new Uint8Array(SALT_SIZE));
     const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
-    const key = await deriveKey(password, salt);
+    const key = await deriveKeyArgon2(password, salt);
 
     const encrypted = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv },
@@ -104,14 +144,28 @@ export async function encrypt(text: string, password: string, compress = false):
     combined.set(new Uint8Array(encrypted), SALT_SIZE + IV_SIZE);
 
     return {
-        blob: toSafeBase64(combined)
+        blob: VERSION_PREFIX + toSafeBase64(combined)
     };
 }
 
+/**
+ * Decrypt blob using appropriate KDF based on version prefix
+ * - v2$... → Argon2id
+ * - (no prefix) → PBKDF2 (legacy)
+ */
 export async function decrypt(blob: string, password: string, decompress = false): Promise<string> {
     let combined: Uint8Array;
+    let useArgon2 = false;
+    let payload = blob;
+
+    // Check for version prefix
+    if (blob.startsWith(VERSION_PREFIX)) {
+        useArgon2 = true;
+        payload = blob.slice(VERSION_PREFIX.length);
+    }
+
     try {
-        combined = fromSafeBase64(blob);
+        combined = fromSafeBase64(payload);
     } catch (e) {
         throw new Error("CORRUPT_LINK");
     }
@@ -125,7 +179,10 @@ export async function decrypt(blob: string, password: string, decompress = false
     const iv = combined.slice(SALT_SIZE, SALT_SIZE + IV_SIZE);
     const data = combined.slice(SALT_SIZE + IV_SIZE);
 
-    const key = await deriveKey(password, salt);
+    // Use appropriate KDF based on version
+    const key = useArgon2
+        ? await deriveKeyArgon2(password, salt)
+        : await deriveKeyPBKDF2(password, salt);
 
     try {
         const decrypted = await crypto.subtle.decrypt(
